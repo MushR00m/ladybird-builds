@@ -128,6 +128,21 @@ jobs:
           # Re-sign the bundle — install_name_tool invalidates the
           # existing signature and macOS will kill unsigned binaries.
           codesign --force --deep --sign - "$APP_PATH"
+          # Create versioned symlinks that dyld needs (zip -ry and
+          # codesign may have resolved them).
+          for real in "$APP_PATH"/Contents/lib/*.dylib; do
+            ver="${real%.dylib}"
+            # e.g. liblagom-webview.0.1.0 -> liblagom-webview.0
+            short=$(echo "$ver" | sed -E 's/\.([0-9]+)\.([0-9]+)(\.[0-9]+)?$/.\1/')
+            if [ "$short" != "$ver" ] && [ ! -e "${short}.dylib" ]; then
+              ln -s "$(basename "$real")" "${short}.dylib"
+            fi
+            # Also create major.minor symlink if patch exists
+            minor=$(echo "$ver" | sed -E 's/\.([0-9]+)\.([0-9]+)\.([0-9]+)$/.\1.\2/')
+            if [ "$minor" != "$ver" ] && [ "$minor" != "$short" ] && [ ! -e "${minor}.dylib" ]; then
+              ln -s "$(basename "$real")" "${minor}.dylib"
+            fi
+          done
           mkdir -p "$GITHUB_WORKSPACE/dist"
           # Use zip -ry to preserve symlinks (ditto resolves them)
           cd "$APP_PATH/.." && zip -ry "$GITHUB_WORKSPACE/dist/Ladybird-macos-arm64.zip" "$(basename "$APP_PATH")"
