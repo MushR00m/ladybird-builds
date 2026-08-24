@@ -128,21 +128,9 @@ jobs:
           # Re-sign the bundle — install_name_tool invalidates the
           # existing signature and macOS will kill unsigned binaries.
           codesign --force --deep --sign - "$APP_PATH"
-          # Create versioned symlinks that dyld needs (zip -ry and
-          # codesign may have resolved them).
-          for real in "$APP_PATH"/Contents/lib/*.[0-9]*.[0-9]*.dylib; do
-            [ -e "$real" ] || continue
-            base=$(basename "$real" .dylib)  # e.g. liblagom-webview.0.1.0
-            # Extract name + major version (liblagom-webview.0)
-            name_major=$(echo "$base" | sed -E 's/([^.]*\.[0-9]+)\..+$/\1/')
-            short="$APP_PATH/Contents/lib/${name_major}.dylib"
-            if [ ! -e "$short" ]; then
-              ln -s "$(basename "$real")" "$short"
-            fi
-          done
           mkdir -p "$GITHUB_WORKSPACE/dist"
-          # Use zip -ry to preserve symlinks (ditto resolves them)
-          cd "$APP_PATH/.." && zip -ry "$GITHUB_WORKSPACE/dist/Ladybird-macos-arm64.zip" "$(basename "$APP_PATH")"
+          ditto -c -k --sequesterRsrc --keepParent \
+            "$APP_PATH" "$GITHUB_WORKSPACE/dist/Ladybird-macos-arm64.zip"
 
       - name: Publish nightly release
         uses: softprops/action-gh-release@v2
