@@ -130,17 +130,14 @@ jobs:
           codesign --force --deep --sign - "$APP_PATH"
           # Create versioned symlinks that dyld needs (zip -ry and
           # codesign may have resolved them).
-          for real in "$APP_PATH"/Contents/lib/*.dylib; do
-            ver="${real%.dylib}"
-            # e.g. liblagom-webview.0.1.0 -> liblagom-webview.0
-            short=$(echo "$ver" | sed -E 's/\.([0-9]+)\.([0-9]+)(\.[0-9]+)?$/.\1/')
-            if [ "$short" != "$ver" ] && [ ! -e "${short}.dylib" ]; then
-              ln -s "$(basename "$real")" "${short}.dylib"
-            fi
-            # Also create major.minor symlink if patch exists
-            minor=$(echo "$ver" | sed -E 's/\.([0-9]+)\.([0-9]+)\.([0-9]+)$/.\1.\2/')
-            if [ "$minor" != "$ver" ] && [ "$minor" != "$short" ] && [ ! -e "${minor}.dylib" ]; then
-              ln -s "$(basename "$real")" "${minor}.dylib"
+          for real in "$APP_PATH"/Contents/lib/*.[0-9]*.[0-9]*.dylib; do
+            [ -e "$real" ] || continue
+            base=$(basename "$real" .dylib)  # e.g. liblagom-webview.0.1.0
+            # Extract name + major version (liblagom-webview.0)
+            name_major=$(echo "$base" | sed -E 's/([^.]*\.[0-9]+)\..+$/\1/')
+            short="$APP_PATH/Contents/lib/${name_major}.dylib"
+            if [ ! -e "$short" ]; then
+              ln -s "$(basename "$real")" "$short"
             fi
           done
           mkdir -p "$GITHUB_WORKSPACE/dist"
