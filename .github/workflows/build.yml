@@ -129,8 +129,8 @@ jobs:
           # existing signature and macOS will kill unsigned binaries.
           codesign --force --deep --sign - "$APP_PATH"
           mkdir -p "$GITHUB_WORKSPACE/dist"
-          ditto -c -k --sequesterRsrc --keepParent \
-            "$APP_PATH" "$GITHUB_WORKSPACE/dist/Ladybird-macos-arm64.zip"
+          # Use zip -ry to preserve symlinks (ditto resolves them)
+          cd "$APP_PATH/.." && zip -ry "$GITHUB_WORKSPACE/dist/Ladybird-macos-arm64.zip" "$(basename "$APP_PATH")"
 
       - name: Publish nightly release
         uses: softprops/action-gh-release@v2
