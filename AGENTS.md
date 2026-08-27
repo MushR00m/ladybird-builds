@@ -26,3 +26,13 @@ Tools are managed via mise — run `mise install` to set up the dev environment.
 - `flake.nix` — Nix flake for prebuilt binary distribution
 - `ladybird-nightly.rb` — Homebrew cask formula
 - `mise.toml` — tool versions and task runner
+
+## Cross-Repo Conventions
+
+These apply across all repositories (nix-config, nixos-config, homebrew-tap, etc.):
+
+- **Never remove comments** from config files (Nix, YAML, Ruby, etc.)
+- **Preserve all comments** when editing — if unsure, keep it
+- **Never edit configs without asking** — confirm before modifying any config file
+- **Check OpenCode session history** before tackling a problem — similar work may have been done
+  - Sessions DB: `~/.local/share/opencode/opencode.db` (SQLite)
